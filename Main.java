@@ -28,21 +28,24 @@ public class Main {
             taskManager.printTasks();
             // メニュー表示と操作受付
             System.out.println("☆何をしますか？");
-            System.out.println("1.追加　2.完了　3.削除　4.終了");
+            System.out.println("1.追加　2.編集　3.完了　4.削除　5.終了");
             try{
                 int numSelection = scanner.nextInt();
                 scanner.nextLine();  // 改行を吸収
 
                 if(numSelection == 1){
                     taskManager.addTask(scanner);
-
+                
                 }else if(numSelection == 2){
-                    taskManager.completeTask(scanner);
+                    taskManager.editTask(scanner);
 
                 }else if(numSelection == 3){
+                    taskManager.completeTask(scanner);
+
+                }else if(numSelection == 4){
                     taskManager.deleteTask(scanner);
 
-                } else if(numSelection == 4){
+                }else if(numSelection == 5){
                     taskManager.saveToFile(fileName);//  終了時にタスクをファイルに保存
                     System.out.println("終了します。");
                     break;

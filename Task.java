@@ -28,5 +28,10 @@ public class Task {
     public boolean isDone() {
         return isDone;
     }
+
+    //titleの書き換え
+    public void setTitle(String newTitle){
+        this.title=newTitle;
+    }
     
 }
