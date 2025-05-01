@@ -19,5 +19,14 @@ public class Task {
     public String toString(){
         return (isDone?"〔×〕":"〔〕")+title;
     }
+
+    // Taskクラスに追加：
+    public String getTitle() {
+        return title;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
     
 }

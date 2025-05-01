@@ -19,6 +19,10 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         TaskManager taskManager = new TaskManager();
 
+        String fileName = "tasks.csv";
+        taskManager.loadFromFile(fileName); // アプリ起動時にファイルからタスクを読み込む
+
+
         while(true){
             //タスク一覧表示
             taskManager.printTasks();
@@ -27,7 +31,7 @@ public class Main {
             System.out.println("1.追加　2.完了　3.削除　4.終了");
             try{
                 int numSelection = scanner.nextInt();
-                scanner.nextLine(); 
+                scanner.nextLine();  // 改行を吸収
 
                 if(numSelection == 1){
                     taskManager.addTask(scanner);
@@ -39,6 +43,7 @@ public class Main {
                     taskManager.deleteTask(scanner);
 
                 } else if(numSelection == 4){
+                    taskManager.saveToFile(fileName);//  終了時にタスクをファイルに保存
                     System.out.println("終了します。");
                     break;
 
@@ -46,7 +51,7 @@ public class Main {
                     System.out.println("入力番号が不正です。もう一度入力してください。");
                 }
             } catch (InputMismatchException e) {
-                scanner.nextLine(); // ← 数値以外の入力の例外処理
+                scanner.nextLine(); // 数値以外の入力の例外処理
                 System.out.println("※数字で入力してください！");
             }
         }   

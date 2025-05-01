@@ -2,6 +2,15 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+
+
 
 //タスクの処理内容を管理するクラス
 public class TaskManager {
@@ -56,4 +65,55 @@ public class TaskManager {
             System.out.println("※タスク番号は数字で入力してください。");
         }    
     }
+
+    //ファイルに保存するメソッド
+    public void saveToFile(String fileName){
+        try{
+            FileOutputStream fos = new FileOutputStream(fileName);// ファイルを開く
+            OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");// UTF-8で書く準備
+            BufferedWriter writer = new BufferedWriter(osw);// 効率よく書く
+
+            for(Task task:tasks){
+                writer.write(task.getTitle() + "," + task.isDone());
+                writer.newLine();
+            }
+            writer.close();  // ★ファイルを確実に閉じる！
+    
+            System.out.println("保存完了: " + tasks.size() + " 件");
+        }catch(IOException e){
+            System.out.println("保存に失敗しました。");
+            e.printStackTrace();
+        }
+    }
+
+    //タスクをファイルから復元するメソッド
+    public void loadFromFile(String fileName){
+        tasks.clear();
+        System.out.println("復元処理を開始します...");
+        try {
+            FileInputStream fis = new FileInputStream(fileName);// ファイルをバイトで読む
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");// UTF-8で文字に変換
+            BufferedReader reader = new BufferedReader(isr);// 効率よく1行ずつ読む
+
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",", 2); // カンマで2つに分ける
+                    String title = parts[0]; // タスク名
+                    boolean isDone = Boolean.parseBoolean(parts[1]); // true または false
+                    Task task = new Task(title);
+                    if (isDone) {
+                        task.markDone(); // 完了フラグがtrueなら完了状態にする
+                    }
+                    tasks.add(task); // リストに追加
+                    count++;
+                }
+                reader.close(); 
+
+                System.out.println("読み込み完了: " + count + "件");
+            } catch (IOException e) {
+                System.out.println("読み込みに失敗しました。ファイルがないか、壊れています。");
+                e.printStackTrace();
+            }
+        }    
 }
