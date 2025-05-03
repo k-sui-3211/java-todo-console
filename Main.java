@@ -19,8 +19,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         TaskManager taskManager = new TaskManager();
 
-        String fileName = "tasks.csv";
-        taskManager.loadFromFile(fileName); // アプリ起動時にファイルからタスクを読み込む
+        taskManager.loadFromDatabase(); // アプリ起動時にファイルからタスクを読み込む
 
 
         while(true){
@@ -46,7 +45,7 @@ public class Main {
                     taskManager.deleteTask(scanner);
 
                 }else if(numSelection == 5){
-                    taskManager.saveToFile(fileName);//  終了時にタスクをファイルに保存
+                    taskManager.saveToDatabase("tasks.db");//  終了時にタスクをファイルに保存
                     System.out.println("終了します。");
                     break;
 
