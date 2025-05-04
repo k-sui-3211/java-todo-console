@@ -13,22 +13,25 @@ import java.util.Scanner;
 public class TaskManager {
 
     private List<Task> tasks = new ArrayList<>();
+    private int nextId = 1;// idは初期値1から開始
 
+    // DBから復元するメソッド
     public void loadFromDatabase() {
         tasks.clear(); // 今のリストを初期化
 
         String url = "jdbc:sqlite:tasks.db";
-        String selectSQL = "SELECT title, isDone FROM tasks";
+        String selectSQL = "SELECT id, title, isDone FROM tasks";
 
         try (Connection conn = DriverManager.getConnection(url);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(selectSQL)) {
 
             while (rs.next()) {
+                int id = rs.getInt("id");
                 String title = rs.getString("title");
                 boolean isDone = rs.getInt("isDone") == 1;
 
-                Task task = new Task(title);
+                Task task = new Task(id, title);
                 if (isDone) {
                     task.markDone();
                 }
@@ -43,14 +46,14 @@ public class TaskManager {
         }
     }
 
-    // ファイルに保存するメソッド
+    // DBに保存するメソッド
     public void saveToDatabase(String dbFileName) {
         String url = "jdbc:sqlite:" + dbFileName;
 
         try (Connection conn = DriverManager.getConnection(url)) {
             // tasksテーブルがなければ作成
             String createTableSQL = "CREATE TABLE IF NOT EXISTS tasks (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "id INTEGER PRIMARY KEY, " +
                     "title TEXT NOT NULL, " +
                     "isDone INTEGER NOT NULL)";
             conn.createStatement().execute(createTableSQL);
@@ -59,11 +62,12 @@ public class TaskManager {
             conn.createStatement().execute("DELETE FROM tasks");
 
             // データを挿入
-            String insertSQL = "INSERT INTO tasks (title, isDone) VALUES (?, ?)";
+            String insertSQL = "INSERT INTO tasks (id, title, isDone) VALUES (?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 for (Task task : tasks) {
-                    pstmt.setString(1, task.getTitle());
-                    pstmt.setInt(2, task.isDone() ? 1 : 0);
+                    pstmt.setInt(1, task.getId());
+                    pstmt.setString(2, task.getTitle());
+                    pstmt.setInt(3, task.isDone() ? 1 : 0);
                     pstmt.executeUpdate();
                 }
             }
@@ -87,8 +91,26 @@ public class TaskManager {
     public void addTask(Scanner scanner) {
         System.out.println("タスクの内容を入力してください。");
         String title = scanner.nextLine();
-        Task task = new Task(title);
+        Task task = new Task(nextId++, title);
         tasks.add(task);
+
+        String url = "jdbc:sqlite:tasks.db";
+        String insertSQL = "INSERT INTO tasks (id, title, isDone) VALUES (?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(url);
+                PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+
+            pstmt.setInt(1, task.getId());
+            pstmt.setString(2, task.getTitle());
+            pstmt.setInt(3, task.isDone() ? 1 : 0);
+            pstmt.executeUpdate();
+
+            System.out.println("タスクを追加しました。");
+
+        } catch (SQLException e) {
+            System.out.println("SQLiteへの追加に失敗しました。");
+            e.printStackTrace();
+        }
     }
 
     // タスク編集メソッド
@@ -100,7 +122,23 @@ public class TaskManager {
             if (taskNumber >= 1 && taskNumber <= tasks.size()) {
                 Task task = tasks.get(taskNumber - 1);
                 System.out.println("タスクの内容を入力してください。");
-                task.setTitle(scanner.nextLine());
+                String newTitle = scanner.nextLine();
+                task.setTitle(newTitle);
+
+                String url = "jdbc:sqlite:tasks.db";
+                String updateSQL = "UPDATE tasks SET title = ? WHERE id = ?";
+
+                try (Connection conn = DriverManager.getConnection(url);
+                        PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
+
+                    pstmt.setString(1, newTitle);
+                    pstmt.setInt(2, task.getId());
+                    pstmt.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println("SQLiteの更新に失敗しました。");
+                    e.printStackTrace();
+                }
             } else {
                 System.out.println("その番号のタスクは存在しません。");
             }
@@ -110,7 +148,7 @@ public class TaskManager {
         }
     }
 
-    // 入力された番号のタスクを完了状態にする（完了メニュー選択時に呼ばれる）
+    // 入力された番号のタスクを完了状態にする
     public void completeTask(Scanner scanner) {
         System.out.println("完了とするタスクの番号を入力してください。");
         try {
@@ -118,6 +156,19 @@ public class TaskManager {
             if (taskNumber >= 1 && taskNumber <= tasks.size()) {
                 Task task = tasks.get(taskNumber - 1);
                 task.markDone();
+
+                String url = "jdbc:sqlite:tasks.db";
+                String updateSQL = "UPDATE tasks SET isDone = 1 WHERE id = ?";
+
+                try (Connection conn = DriverManager.getConnection(url);
+                        PreparedStatement pstmt = conn.prepareStatement(updateSQL)) {
+                    pstmt.setInt(1, task.getId());
+                    pstmt.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println("SQLiteの更新に失敗しました。");
+                    e.printStackTrace();
+                }
             } else {
                 System.out.println("その番号のタスクは存在しません。");
             }
@@ -133,7 +184,23 @@ public class TaskManager {
         try {
             int taskNumber = scanner.nextInt();
             if (taskNumber >= 1 && taskNumber <= tasks.size()) {
+                Task task = tasks.get(taskNumber - 1);
+                int id = task.getId();
                 tasks.remove(taskNumber - 1);
+
+                String url = "jdbc:sqlite:tasks.db";
+                String deleteSQL = "DELETE FROM tasks WHERE id = ?";
+
+                try (Connection conn = DriverManager.getConnection(url);
+                        PreparedStatement pstmt = conn.prepareStatement(deleteSQL)) {
+
+                    pstmt.setInt(1, id);
+                    pstmt.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println("SQLiteの更新に失敗しました。");
+
+                }
             } else {
                 System.out.println("その番号のタスクは存在しません！");
             }
