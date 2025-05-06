@@ -13,11 +13,12 @@ import java.util.Scanner;
 public class TaskManager {
 
     private List<Task> tasks = new ArrayList<>();
-    private int nextId = 1;// idは初期値1から開始
+    private int nextId;
 
     // DBから復元するメソッド
     public void loadFromDatabase() {
         tasks.clear(); // 今のリストを初期化
+        nextId = 1;
 
         String url = "jdbc:sqlite:tasks.db";
         String selectSQL = "SELECT id, title, isDone FROM tasks";
@@ -32,12 +33,16 @@ public class TaskManager {
                 boolean isDone = rs.getInt("isDone") == 1;
 
                 Task task = new Task(id, title);
+
                 if (isDone) {
                     task.markDone();
                 }
                 tasks.add(task);
-            }
 
+                if (id >= nextId) {
+                    nextId = id + 1;
+                }
+            }
             System.out.println("データベースから復元完了: " + tasks.size() + " 件");
 
         } catch (SQLException e) {
@@ -58,11 +63,8 @@ public class TaskManager {
                     "isDone INTEGER NOT NULL)";
             conn.createStatement().execute(createTableSQL);
 
-            // 既存のデータを一旦削除（上書き保存）
-            conn.createStatement().execute("DELETE FROM tasks");
-
             // データを挿入
-            String insertSQL = "INSERT INTO tasks (id, title, isDone) VALUES (?, ?, ?)";
+            String insertSQL = "INSERT OR REPLACE INTO tasks (id, title, isDone) VALUES (?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
                 for (Task task : tasks) {
                     pstmt.setInt(1, task.getId());
@@ -81,9 +83,41 @@ public class TaskManager {
 
     // タスク一覧を表示するメソッド
     public void printTasks() {
-        System.out.println("\n==== タスク一覧 ====");
-        for (int i = 0; i < tasks.size(); i++) {
-            System.out.println((i + 1) + ". " + tasks.get(i));
+        printTasks(1); // デフォルト＝全表示
+    }
+
+    public void printTasks(int mode) {
+        String whereClause = switch (mode) {
+            case 1 -> "1=1";
+            case 2 -> "isDone = 0";
+            case 3 -> "isDone = 1";
+            default -> {
+                System.out.println("無効な選択です。全件を表示します。");
+                yield "1=1";
+            }
+        };
+
+        // ここでモードラベルを設定
+        String modeLabel = switch (mode) {
+            case 1 -> "すべて表示";
+            case 2 -> "未完了のみ";
+            case 3 -> "完了のみ";
+            default -> "不明";
+        };
+
+        System.out.println("\n====タスク一覧(表示モード" + modeLabel + ")====");
+
+        List<Task> tasksToDisplay = getFilteredTasks(whereClause);
+
+        if (tasksToDisplay.isEmpty()) {
+            System.out.println("表示対象のタスクがありません。");
+            return;
+        }
+
+        int i = 1;
+        for (Task task : tasksToDisplay) {
+            System.out.println(i + ". " + task);
+            i++;
         }
     }
 
@@ -209,4 +243,34 @@ public class TaskManager {
             System.out.println("※タスク番号は数字で入力してください。");
         }
     }
+
+    // 表示モードを変更するメソッド
+    public List<Task> getFilteredTasks(String whereClause) {
+        List<Task> filteredTasks = new ArrayList<>();
+        String url = "jdbc:sqlite:tasks.db";
+        String selectSQL = "SELECT id, title, isDone FROM tasks WHERE " + whereClause;
+
+        try (Connection conn = DriverManager.getConnection(url);
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(selectSQL)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String title = rs.getString("title");
+                boolean isDone = rs.getInt("isDone") == 1;
+
+                Task task = new Task(id, title);
+                if (isDone)
+                    task.markDone();
+                filteredTasks.add(task);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("SQLiteのフィルタ取得に失敗しました。");
+            e.printStackTrace();
+        }
+
+        return filteredTasks;
+    }
+
 }

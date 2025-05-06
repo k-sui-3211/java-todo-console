@@ -2,12 +2,9 @@
 // Java Console ToDo App
 // - 作成者: sui
 // - 今後の展望：
-//     ・タスクの保存／読み込み機能（ファイル or データベース）
 //     ・完了済みのフィルタ表示
-//     ・タスクの編集機能（名前変更）
 //     ・締切日・優先度の追加
 // ==============================
-
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -21,41 +18,65 @@ public class Main {
 
         taskManager.loadFromDatabase(); // アプリ起動時にファイルからタスクを読み込む
 
+        // タスク一覧表示
+        taskManager.printTasks();
 
-        while(true){
-            //タスク一覧表示
-            taskManager.printTasks();
+        while (true) {
+
             // メニュー表示と操作受付
-            System.out.println("☆何をしますか？");
-            System.out.println("1.追加　2.編集　3.完了　4.削除　5.終了");
-            try{
-                int numSelection = scanner.nextInt();
-                scanner.nextLine();  // 改行を吸収
+            System.out.println("\n☆ 何をしますか？");
+            System.out.println("""
 
-                if(numSelection == 1){
+                    ====メニュー====
+                    1.タスクを追加
+                    2.タスクを編集
+                    3.タスクを完了
+                    4.タスクを削除
+                    5.表示モードを切り替える
+                    6.アプリを終了する
+                    """);
+            try {
+                int numSelection = scanner.nextInt();
+                scanner.nextLine(); // 改行を吸収
+
+                if (numSelection == 1) {
                     taskManager.addTask(scanner);
-                
-                }else if(numSelection == 2){
+
+                } else if (numSelection == 2) {
                     taskManager.editTask(scanner);
 
-                }else if(numSelection == 3){
+                } else if (numSelection == 3) {
                     taskManager.completeTask(scanner);
 
-                }else if(numSelection == 4){
+                } else if (numSelection == 4) {
                     taskManager.deleteTask(scanner);
 
-                }else if(numSelection == 5){
-                    taskManager.saveToDatabase("tasks.db");//  終了時にタスクをファイルに保存
+                } else if (numSelection == 5) {
+                    System.out.println("""
+
+                            ==== 表示モードを選択 ====
+                            1. 全て表示
+                            2. 未完了のみ
+                            3. 完了のみ
+                            """);
+
+                    int mode = scanner.nextInt();
+                    scanner.nextLine();
+
+                    taskManager.printTasks(mode);
+
+                } else if (numSelection == 6) {
+                    taskManager.saveToDatabase("tasks.db");// 終了時にタスクをファイルに保存
                     System.out.println("終了します。");
                     break;
 
-                }else{
+                } else {
                     System.out.println("入力番号が不正です。もう一度入力してください。");
                 }
             } catch (InputMismatchException e) {
                 scanner.nextLine(); // 数値以外の入力の例外処理
                 System.out.println("※数字で入力してください！");
             }
-        }   
+        }
     }
 }
