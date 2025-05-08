@@ -39,40 +39,54 @@ public class Main {
                 int numSelection = scanner.nextInt();
                 scanner.nextLine(); // 改行を吸収
 
-                if (numSelection == 1) {
-                    taskManager.addTask(scanner);
-
-                } else if (numSelection == 2) {
-                    taskManager.editTask(scanner);
-
-                } else if (numSelection == 3) {
-                    taskManager.completeTask(scanner);
-
-                } else if (numSelection == 4) {
-                    taskManager.deleteTask(scanner);
-
-                } else if (numSelection == 5) {
-                    System.out.println("""
-
-                            ==== 表示モードを選択 ====
-                            1. 全て表示
-                            2. 未完了のみ
-                            3. 完了のみ
-                            """);
-
-                    int mode = scanner.nextInt();
-                    scanner.nextLine();
-
-                    taskManager.printTasks(mode);
-
-                } else if (numSelection == 6) {
-                    taskManager.saveToDatabase("tasks.db");// 終了時にタスクをファイルに保存
-                    System.out.println("終了します。");
-                    break;
-
-                } else {
-                    System.out.println("入力番号が不正です。もう一度入力してください。");
+                switch (numSelection) {
+                    case 1 -> {
+                        System.out.println("タスクの内容を入力してください：");
+                        String title = scanner.nextLine();
+                        taskManager.addTask(title);
+                        taskManager.printTasks();
+                    }
+                    case 2 -> {
+                        System.out.println("編集するタスクの番号を入力してください：");
+                        int taskNumber = scanner.nextInt();
+                        scanner.nextLine();
+                        System.out.println("新しいタスク内容を入力してください：");
+                        String newTitle = scanner.nextLine();
+                        taskManager.editTask(taskNumber, newTitle);
+                        taskManager.printTasks();
+                    }
+                    case 3 -> {
+                        System.out.println("完了にするタスクの番号を入力してください：");
+                        int taskNumber = scanner.nextInt();
+                        scanner.nextLine();
+                        taskManager.completeTask(taskNumber);
+                        taskManager.printTasks();
+                    }
+                    case 4 -> {
+                        System.out.println("削除するタスクの番号を入力してください：");
+                        int taskNumber = scanner.nextInt();
+                        scanner.nextLine();
+                        taskManager.deleteTask(taskNumber);
+                        taskManager.printTasks();
+                    }
+                    case 5 -> {
+                        System.out.println("""
+                                ==== 表示モードを選択 ====
+                                1. 全て表示
+                                2. 未完了のみ
+                                3. 完了のみ
+                                """);
+                        int mode = scanner.nextInt();
+                        scanner.nextLine();
+                        taskManager.printTasks(mode);
+                    }
+                    case 6 -> {
+                        System.out.println("終了します。");
+                        return;
+                    }
+                    default -> System.out.println("入力番号が不正です。もう一度入力してください。");
                 }
+
             } catch (InputMismatchException e) {
                 scanner.nextLine(); // 数値以外の入力の例外処理
                 System.out.println("※数字で入力してください！");
