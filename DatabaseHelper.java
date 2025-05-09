@@ -3,6 +3,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +11,21 @@ import java.util.List;
 public class DatabaseHelper {
 
     private static final String DB_URL = "jdbc:sqlite:tasks.db";
+
+    // DB作成
+    public static void initializeDatabase() {
+        String sql = """
+                    CREATE TABLE IF NOT EXISTS tasks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        isDone INTEGER NOT NULL,
+                        dueDate TEXT,
+                        priority INTEGER
+                    );
+                """;
+
+        executeUpdate(sql);
+    }
 
     // DB接続を取得する共通メソッド
     public static Connection getConnection() throws SQLException {
@@ -31,8 +47,8 @@ public class DatabaseHelper {
     }
 
     // SELECT用の汎用メソッド
-    public static List<Object[]> executeQuery(String sql, Object... params) {
-        List<Object[]> resultList = new ArrayList<>();
+    public static List<Task> executeQuery(String sql, Object... params) {
+        List<Task> tasks = new ArrayList<>();
 
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -41,20 +57,34 @@ public class DatabaseHelper {
                 pstmt.setObject(i + 1, params[i]);
             }
 
-            try (ResultSet rs = pstmt.executeQuery()) {
-                int columnCount = rs.getMetaData().getColumnCount();
+            ResultSet rs = pstmt.executeQuery();
 
-                while (rs.next()) {
-                    Object[] row = new Object[columnCount];
-                    for (int i = 0; i < columnCount; i++) {
-                        row[i] = rs.getObject(i + 1);
-                    }
-                    resultList.add(row);
-                }
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String title = rs.getString("title");
+                boolean isDone = rs.getInt("isDone") == 1;
+
+                // 追加された dueDate カラムの処理
+                String dueDateStr = rs.getString("dueDate");
+                LocalDate dueDate = (dueDateStr != null) ? LocalDate.parse(dueDateStr) : null;
+
+                // 追加された priority カラムの処理
+                int priorityLevel = rs.getInt("priority");
+                Priority priority = Priority.fromLevel(priorityLevel);
+
+                // 新しい Task コンストラクタに合わせる
+                Task task = new Task(id, title, dueDate, priority);
+
+                if (isDone)
+                    task.markDone();
+
+                tasks.add(task);
             }
+
         } catch (SQLException e) {
-            System.out.println("DBクエリ実行に失敗しました。" + e.getMessage());
+            e.printStackTrace();
         }
-        return resultList;
+
+        return tasks;
     }
 }
