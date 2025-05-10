@@ -35,9 +35,10 @@ public class Task {
     // タスクの表示方法
     @Override
     public String toString() {
+        String status = isDone ? " [x] " : " [ ] ";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String dueDateStr = (dueDate != null) ? dueDate.format(formatter) : "なし";
-        return (isDone ? "[完了] " : "[未完了] ") + title + " | 期限: " + dueDateStr + " | 優先度: " + priority;
+        String dueDateStr = (dueDate != null) ? dueDate.format(formatter) : "未設定";
+        return String.format("%s %-20s %-15s %-15s", status, title, dueDateStr, priority);
     }
 
     public int getId() {

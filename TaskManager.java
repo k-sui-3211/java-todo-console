@@ -12,7 +12,9 @@ public class TaskManager {
         this.scanner = scanner;
     }
 
-    public void printTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy) {
+    // タスク表示
+    public void printTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy,
+            boolean confirmDelete) {
         List<Task> tasks = taskRepository.getSortedTasks(isDone, dueDate, priority, orderBy);
 
         StringBuilder outputLabel = new StringBuilder("\n==== タスク一覧（");
@@ -37,12 +39,20 @@ public class TaskManager {
             return;
         }
 
+        System.out.printf("%-3s %-6s %-20s %-12s %-10s\n", "No.", "状態", "内容", "期限", "優先度");
+        System.out.println("--------------------------------------------------------------");
+
         for (int i = 0; i < tasks.size(); i++) {
             Task task = tasks.get(i);
-            System.out.println((i + 1) + ". " + task);
+            if (confirmDelete) {
+                System.out.println("- " + task); // 削除確認モード時の簡潔表示
+            } else {
+                System.out.printf("%-3d %s\n", (i + 1), task);
+            }
         }
     }
 
+    // タスク追加
     public void addTask() {
         System.out.println("\nタスクの内容を入力（必須）：");
         String title = scanner.nextLine();
@@ -73,11 +83,12 @@ public class TaskManager {
         taskRepository.insertTask(new Task(title, dueDate, priority));
         System.out.println("\nタスクを追加しました。");
 
-        printTasks(null, null, null, null);
+        printTasks(null, null, null, null, false);
     }
 
+    // タスク編集
     public void editTask() {
-        printTasks(null, null, null, null);
+        printTasks(null, null, null, null, false);
         System.out.println("\n編集するタスクの番号を入力：");
         int index = scanner.nextInt();
         scanner.nextLine(); // 改行消費
@@ -113,9 +124,10 @@ public class TaskManager {
             default -> System.out.println("\n無効な選択です。");
         }
 
-        printTasks(null, null, null, null);
+        printTasks(null, null, null, null, false);
     }
 
+    // タスク内容更新
     private void editTitle(Task task) {
         System.out.println("\n新しいタイトル（Enterでスキップ）：");
         String newTitle = scanner.nextLine();
@@ -127,6 +139,7 @@ public class TaskManager {
         }
     }
 
+    // 期限更新
     private void editDueDate(Task task) {
         while (true) {
             System.out.println("\n新しい期限 (yyyy-MM-dd)（Enterでスキップ）：");
@@ -147,6 +160,7 @@ public class TaskManager {
         }
     }
 
+    // 優先度更新
     private void editPriority(Task task) {
         System.out.println("\n新しい優先度 (1: HIGH, 2: MEDIUM, 3: LOW)（Enterでスキップ）：");
         String priorityInput = scanner.nextLine();
@@ -164,6 +178,7 @@ public class TaskManager {
         }
     }
 
+    // タスク完了
     public void completeTask() {
         List<Task> tasks = taskRepository.getTasks();
 
@@ -189,9 +204,10 @@ public class TaskManager {
         taskRepository.updateTaskStatus(task.getId(), true);
         System.out.println("\nタスクを完了しました。");
 
-        printTasks(null, null, null, null);
+        printTasks(null, null, null, null, false);
     }
 
+    // タスク削除
     public void deleteTask() {
         List<Task> tasks = taskRepository.getTasks();
 
@@ -217,7 +233,7 @@ public class TaskManager {
         taskRepository.deleteTask(task.getId());
         System.out.println("\nタスクを削除しました。");
 
-        printTasks(null, null, null, null);
+        printTasks(null, null, null, null, false);
     }
 
     // 並び替えメニュー
@@ -237,9 +253,9 @@ public class TaskManager {
         String orderBy = null;
 
         switch (choice) {
-            case 1 -> printTasks(null, null, null, null); // 全件表示
-            case 2 -> printTasks(false, null, null, null); // 未完了のみ
-            case 3 -> printTasks(true, null, null, null); // 完了のみ
+            case 1 -> printTasks(null, null, null, null, false); // 全件表示
+            case 2 -> printTasks(false, null, null, null, false); // 未完了のみ
+            case 3 -> printTasks(true, null, null, null, false); // 完了のみ
             case 4 -> orderBy = "dueDate ASC"; // 期限順
             case 5 -> orderBy = "priority ASC"; // 優先度順
             default -> {
@@ -249,7 +265,67 @@ public class TaskManager {
         }
 
         if (orderBy != null) {
-            printTasks(null, null, null, orderBy);
+            printTasks(null, null, null, orderBy, false);
         }
     }
+
+    // 完了済タスクの一括削除
+    public void deleteCompletedTasks() {
+        List<Task> completedTasks = taskRepository.getSortedTasks(true, null, null, null);
+
+        if (completedTasks.isEmpty()) {
+            System.out.println("完了済のタスクはありません。");
+            return;
+        }
+
+        System.out.println("\n完了済タスクが " + completedTasks.size() + " 件あります。削除してもよろしいですか？ (Y/N)");
+
+        // 完了済みタスク一覧出力
+        printTasks(true, null, null, null, true);
+
+        String input = scanner.nextLine().trim().toUpperCase();
+
+        if (input.equals("Y")) {
+            taskRepository.deleteCompletedTasks();
+            System.out.println("\n完了済タスクを削除しました。");
+        } else {
+            System.out.println("\n削除をキャンセルしました。");
+        }
+        // 通常表示モードで再出力
+        printTasks(null, null, null, null, false);
+    }
+
+    // データベースのバックアップ作成
+    public void backupData() {
+        System.out.println("バックアップファイル名を入力してください（例：backup_20250510.db）：");
+        String backupFileName = scanner.nextLine().trim();
+
+        if (backupFileName.isEmpty()) {
+            System.out.println("ファイル名が空です。");
+            return;
+        }
+
+        DatabaseHelper.backupDatabase(backupFileName);
+    }
+
+    // データベースのリストア
+    public void restoreData() {
+        System.out.println("リストアするバックアップファイル名を入力してください：");
+        String backupFileName = scanner.nextLine().trim();
+
+        if (backupFileName.isEmpty()) {
+            System.out.println("ファイル名が空です。");
+            return;
+        }
+
+        System.out.println("現在のデータが上書きされます。リストアしますか？ (Y/N)");
+        String confirmation = scanner.nextLine().trim().toUpperCase();
+
+        if (confirmation.equals("Y")) {
+            DatabaseHelper.restoreDatabase(backupFileName);
+        } else {
+            System.out.println("リストアをキャンセルしました。");
+        }
+    }
+
 }

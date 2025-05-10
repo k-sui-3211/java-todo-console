@@ -1,6 +1,7 @@
 import java.time.LocalDate;
 import java.util.List;
 
+//DBアクセス専用クラス
 public class TaskRepository {
 
     public List<Task> getSortedTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy) {
@@ -66,6 +67,13 @@ public class TaskRepository {
         DatabaseHelper.executeUpdate(sql, taskId);
     }
 
+    // 完了済みタスクの一括削除
+    public void deleteCompletedTasks() {
+        String sql = "DELETE FROM tasks WHERE isDone = 1";
+        DatabaseHelper.executeUpdate(sql);
+    }
+
+    //
     public List<Task> getTasks() {
         String sql = "SELECT id, title, isDone, dueDate, priority FROM tasks ORDER BY id ASC";
         return DatabaseHelper.executeQuery(sql);

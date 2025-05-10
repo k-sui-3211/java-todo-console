@@ -1,3 +1,7 @@
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,6 +15,7 @@ import java.util.List;
 public class DatabaseHelper {
 
     private static final String DB_URL = "jdbc:sqlite:tasks.db";
+    private static final String DB_FILE = "tasks.db";
 
     // DB作成
     public static void initializeDatabase() {
@@ -86,5 +91,43 @@ public class DatabaseHelper {
         }
 
         return tasks;
+    }
+
+    // データベースのバックアップ
+    public static void backupDatabase(String backupFileName) {
+        File sourceFile = new File(DB_FILE);
+        File backupFile = new File(backupFileName);
+
+        if (backupFileName.equals(DB_FILE)) {
+            System.out.println("エラー：バックアップファイル名に 'tasks.db' は使用できません。");
+            return;
+        }
+
+        try {
+            Files.copy(sourceFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("データベースをバックアップしました: " + backupFileName);
+        } catch (IOException e) {
+            System.out.println("バックアップに失敗しました。");
+            e.printStackTrace();
+        }
+    }
+
+    // データベースのリストア
+    public static void restoreDatabase(String backupFileName) {
+        File backupFile = new File(backupFileName);
+        File targetFile = new File(DB_FILE);
+
+        if (!backupFile.exists()) {
+            System.out.println("バックアップファイルが見つかりません: " + backupFileName);
+            return;
+        }
+
+        try {
+            Files.copy(backupFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("データベースをリストアしました: " + backupFileName);
+        } catch (IOException e) {
+            System.out.println("リストアに失敗しました。");
+            e.printStackTrace();
+        }
     }
 }

@@ -2,9 +2,7 @@
 // Java Console ToDo App
 // - 作成者: sui
 // - 今後の展望：
-//     ・締切日・優先度の追加
 //     ・タイトルや日付によるソート機能の実装
-//　　　・完了済みタスクの一括削除や検索機能の導入
 // ==============================
 
 import java.util.InputMismatchException;
@@ -15,7 +13,7 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         TaskManager taskManager = new TaskManager(scanner);
-        taskManager.printTasks(null, null, null, null);
+        taskManager.printTasks(null, null, null, null, false);
         DatabaseHelper.initializeDatabase();
 
         while (true) {
@@ -27,7 +25,10 @@ public class Main {
                     3. タスクを完了
                     4. タスクを削除
                     5. タスクの並び替え（完了/未完了、期限順、優先度順）
-                    6. アプリを終了
+                    6. 完了済タスクの一括削除
+                    7. バックアップの作成
+                    8. データのリストア
+                    9. アプリを終了
                     """);
 
             try {
@@ -40,7 +41,10 @@ public class Main {
                     case 3 -> taskManager.completeTask();
                     case 4 -> taskManager.deleteTask();
                     case 5 -> taskManager.sortTasks();
-                    case 6 -> {
+                    case 6 -> taskManager.deleteCompletedTasks();
+                    case 7 -> taskManager.backupData();
+                    case 8 -> taskManager.restoreData();
+                    case 9 -> {
                         System.out.println("アプリを終了します。");
                         return;
                     }
