@@ -1,55 +1,18 @@
 import java.time.LocalDate;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
+//タスク管理（タスクの追加・編集・完了・削除、ソート機能）を行うクラス
 public class TaskManager {
 
     private TaskRepository taskRepository;
     private Scanner scanner;
 
+    // コンストラクタ
     public TaskManager(Scanner scanner) {
         this.taskRepository = new TaskRepository();
         this.scanner = scanner;
-    }
-
-    // タスク表示
-    public void printTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy,
-            boolean confirmDelete) {
-        List<Task> tasks = taskRepository.getSortedTasks(isDone, dueDate, priority, orderBy);
-
-        StringBuilder outputLabel = new StringBuilder("\n==== タスク一覧（");
-
-        if (isDone == null) {
-            outputLabel.append("全件表示");
-        } else if (isDone) {
-            outputLabel.append("完了のみ");
-        } else {
-            outputLabel.append("未完了のみ");
-        }
-
-        if (orderBy != null) {
-            outputLabel.append(" / ").append(orderBy.replace(" ASC", " 昇順").replace(" DESC", " 降順"));
-        }
-
-        outputLabel.append("） ====");
-        System.out.println(outputLabel);
-
-        if (tasks.isEmpty()) {
-            System.out.println("表示対象のタスクがありません。");
-            return;
-        }
-
-        System.out.printf("%-3s %-6s %-20s %-12s %-10s\n", "No.", "状態", "内容", "期限", "優先度");
-        System.out.println("--------------------------------------------------------------");
-
-        for (int i = 0; i < tasks.size(); i++) {
-            Task task = tasks.get(i);
-            if (confirmDelete) {
-                System.out.println("- " + task); // 削除確認モード時の簡潔表示
-            } else {
-                System.out.printf("%-3d %s\n", (i + 1), task);
-            }
-        }
     }
 
     // タスク追加
@@ -76,9 +39,17 @@ public class TaskManager {
             }
         }
 
+        Priority priority = Priority.LOW; // デフォルトは LOW
+
         System.out.println("\n優先度 (1: HIGH, 2: MEDIUM, 3: LOW)：");
-        int priorityInput = scanner.nextInt();
-        Priority priority = Priority.fromLevel(priorityInput);
+        try {
+            int priorityLevel = scanner.nextInt();
+            priority = Priority.fromLevel(priorityLevel);
+        } catch (InputMismatchException e) {
+            System.out.println("\n無効な入力です。LOW に設定されます。");
+        } finally {
+            scanner.nextLine(); // 改行文字を消費しておく（次の入力を受け取るため）
+        }
 
         taskRepository.insertTask(new Task(title, dueDate, priority));
         System.out.println("\nタスクを追加しました。");
@@ -86,12 +57,51 @@ public class TaskManager {
         printTasks(null, null, null, null, false);
     }
 
+    // タスク表示
+    public void printTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy,
+            boolean confirmDelete) {
+        List<Task> tasks = taskRepository.getSortedTasks(isDone, dueDate, priority, orderBy);
+
+        StringBuilder outputLabel = new StringBuilder("\n==== タスク一覧（");
+
+        if (isDone == null) {
+            outputLabel.append("全件表示");
+        } else if (isDone) {
+            outputLabel.append("完了のみ");
+        } else {
+            outputLabel.append("未完了のみ");
+        }
+
+        if (orderBy != null) {
+            outputLabel.append(" / ").append(orderBy.replace(" ASC", " 昇順").replace(" DESC", " 降順"));
+        }
+
+        outputLabel.append("） ====");
+        System.out.println(outputLabel);
+
+        if (tasks.isEmpty()) {
+            System.out.println("\n表示対象のタスクがありません。");
+            return;
+        }
+
+        System.out.printf("%-3s %-6s %-15s %-12s %-10s\n", "No.", "状態", "内容", "期限", "優先度");
+        System.out.println("--------------------------------------------------------------");
+
+        for (int i = 0; i < tasks.size(); i++) {
+            Task task = tasks.get(i);
+            if (confirmDelete) {
+                System.out.println("- " + task); // 削除確認モード時の簡潔表示
+            } else {
+                System.out.printf("%-3d %s\n", (i + 1), task);
+            }
+        }
+    }
+
     // タスク編集
     public void editTask() {
         printTasks(null, null, null, null, false);
         System.out.println("\n編集するタスクの番号を入力：");
         int index = scanner.nextInt();
-        scanner.nextLine(); // 改行消費
 
         List<Task> tasks = taskRepository.getTasks();
         if (index < 1 || index > tasks.size()) {
@@ -236,6 +246,32 @@ public class TaskManager {
         printTasks(null, null, null, null, false);
     }
 
+    // 完了済タスクの一括削除
+    public void deleteCompletedTasks() {
+        List<Task> completedTasks = taskRepository.getSortedTasks(true, null, null, null);
+
+        if (completedTasks.isEmpty()) {
+            System.out.println("\n完了済のタスクはありません。");
+            return;
+        }
+
+        System.out.println("\n完了済タスクが " + completedTasks.size() + " 件あります。削除してもよろしいですか？ (Y/N)");
+
+        // 完了済みタスク一覧出力
+        printTasks(true, null, null, null, true);
+
+        String input = scanner.nextLine().trim().toUpperCase();
+
+        if (input.equals("Y")) {
+            taskRepository.deleteCompletedTasks();
+            System.out.println("\n完了済タスクを削除しました。");
+        } else {
+            System.out.println("\n削除をキャンセルしました。");
+        }
+        // 通常表示モードで再出力
+        printTasks(null, null, null, null, false);
+    }
+
     // 並び替えメニュー
     public void sortTasks() {
         System.out.println("""
@@ -269,63 +305,40 @@ public class TaskManager {
         }
     }
 
-    // 完了済タスクの一括削除
-    public void deleteCompletedTasks() {
-        List<Task> completedTasks = taskRepository.getSortedTasks(true, null, null, null);
-
-        if (completedTasks.isEmpty()) {
-            System.out.println("完了済のタスクはありません。");
-            return;
-        }
-
-        System.out.println("\n完了済タスクが " + completedTasks.size() + " 件あります。削除してもよろしいですか？ (Y/N)");
-
-        // 完了済みタスク一覧出力
-        printTasks(true, null, null, null, true);
-
-        String input = scanner.nextLine().trim().toUpperCase();
-
-        if (input.equals("Y")) {
-            taskRepository.deleteCompletedTasks();
-            System.out.println("\n完了済タスクを削除しました。");
-        } else {
-            System.out.println("\n削除をキャンセルしました。");
-        }
-        // 通常表示モードで再出力
-        printTasks(null, null, null, null, false);
-    }
-
     // データベースのバックアップ作成
     public void backupData() {
-        System.out.println("バックアップファイル名を入力してください（例：backup_20250510.db）：");
+        System.out.println("\nバックアップファイル名を入力してください（例：backup_20250510.db）：");
         String backupFileName = scanner.nextLine().trim();
 
         if (backupFileName.isEmpty()) {
-            System.out.println("ファイル名が空です。");
+            System.out.println("\nファイル名が空です。");
             return;
         }
 
         DatabaseHelper.backupDatabase(backupFileName);
+        printTasks(null, null, null, null, false);
+
     }
 
     // データベースのリストア
     public void restoreData() {
-        System.out.println("リストアするバックアップファイル名を入力してください：");
+        System.out.println("\nリストアするバックアップファイル名を入力してください：");
         String backupFileName = scanner.nextLine().trim();
 
         if (backupFileName.isEmpty()) {
-            System.out.println("ファイル名が空です。");
+            System.out.println("\nファイル名が空です。");
             return;
         }
 
-        System.out.println("現在のデータが上書きされます。リストアしますか？ (Y/N)");
+        System.out.println("\n現在のデータが上書きされます。リストアしますか？ (Y/N)");
         String confirmation = scanner.nextLine().trim().toUpperCase();
 
         if (confirmation.equals("Y")) {
             DatabaseHelper.restoreDatabase(backupFileName);
         } else {
-            System.out.println("リストアをキャンセルしました。");
+            System.out.println("\nリストアをキャンセルしました。");
         }
+        printTasks(null, null, null, null, false);
     }
 
 }

@@ -11,11 +11,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-//DB接続・クエリ実行クラス
+//SQL実行の汎用クラス（クエリ実行、バックアップ/リストア）
 public class DatabaseHelper {
 
     private static final String DB_URL = "jdbc:sqlite:tasks.db";
     private static final String DB_FILE = "tasks.db";
+
+    // DB接続を取得する共通メソッド
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(DB_URL);
+    }
 
     // DB作成
     public static void initializeDatabase() {
@@ -32,12 +37,7 @@ public class DatabaseHelper {
         executeUpdate(sql);
     }
 
-    // DB接続を取得する共通メソッド
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
-    }
-
-    // INSERT /UPDATE / DELETE 用汎用メソッド
+    // データの更新/削除/挿入用汎用メソッド
     public static void executeUpdate(String sql, Object... params) {
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -51,7 +51,7 @@ public class DatabaseHelper {
         }
     }
 
-    // SELECT用の汎用メソッド
+    // データの取得用の汎用メソッド
     public static List<Task> executeQuery(String sql, Object... params) {
         List<Task> tasks = new ArrayList<>();
 
@@ -93,7 +93,7 @@ public class DatabaseHelper {
         return tasks;
     }
 
-    // データベースのバックアップ
+    // データベースのバックアップ作成用メソッド
     public static void backupDatabase(String backupFileName) {
         File sourceFile = new File(DB_FILE);
         File backupFile = new File(backupFileName);
@@ -112,7 +112,7 @@ public class DatabaseHelper {
         }
     }
 
-    // データベースのリストア
+    // データベースのリストア実行用メソッド
     public static void restoreDatabase(String backupFileName) {
         File backupFile = new File(backupFileName);
         File targetFile = new File(DB_FILE);

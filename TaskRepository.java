@@ -1,9 +1,22 @@
 import java.time.LocalDate;
 import java.util.List;
 
-//DBアクセス専用クラス
+//DBアクセス専用クラス（CRUD処理）
 public class TaskRepository {
 
+    // タスクの保存（INSERT / UPDATE）
+    public void insertTask(Task task) {
+        String sql = "INSERT INTO tasks (title, dueDate, priority, isDone) VALUES (?, ?, ?, 0)";
+        DatabaseHelper.executeUpdate(sql, task.getTitle(), task.getDueDate(), task.getPriority().getLevel());
+    }
+
+    // 全タスクを取得する
+    public List<Task> getTasks() {
+        String sql = "SELECT id, title, isDone, dueDate, priority FROM tasks ORDER BY id ASC";
+        return DatabaseHelper.executeQuery(sql);
+    }
+
+    // 条件付きでタスクを取得する
     public List<Task> getSortedTasks(Boolean isDone, LocalDate dueDate, Priority priority, String orderBy) {
         StringBuilder sql = new StringBuilder("SELECT id, title, isDone, dueDate, priority FROM tasks");
         boolean hasCondition = false;
@@ -29,12 +42,6 @@ public class TaskRepository {
         }
 
         return DatabaseHelper.executeQuery(sql.toString());
-    }
-
-    // タスクの保存（INSERT / UPDATE）
-    public void insertTask(Task task) {
-        String sql = "INSERT INTO tasks (title, dueDate, priority, isDone) VALUES (?, ?, ?, 0)";
-        DatabaseHelper.executeUpdate(sql, task.getTitle(), task.getDueDate(), task.getPriority().getLevel());
     }
 
     // タスクのタイトルを更新する
@@ -71,12 +78,6 @@ public class TaskRepository {
     public void deleteCompletedTasks() {
         String sql = "DELETE FROM tasks WHERE isDone = 1";
         DatabaseHelper.executeUpdate(sql);
-    }
-
-    //
-    public List<Task> getTasks() {
-        String sql = "SELECT id, title, isDone, dueDate, priority FROM tasks ORDER BY id ASC";
-        return DatabaseHelper.executeQuery(sql);
     }
 
 }

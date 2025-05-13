@@ -38,19 +38,12 @@ javac -encoding UTF-8 -cp ".;sqlite-jdbc-3.36.0.3.jar" Main.java TaskManager.jav
 
 ## 構造
 
-- Main：ユーザー入力の受付と操作メニューの表示
+- Main：操作メニューの表示
 - TaskManager：タスク管理（タスクの追加・編集・完了・削除、ソート機能）
 - TaskRepository：DBアクセス専用クラス（CRUD処理）
-- DatabaseHelper：SQL実行の汎用クラス
+- DatabaseHelper：//SQL実行の汎用クラス（クエリ実行、バックアップ/リストア）
 - Task:タスクの状態を管理するクラス（タイトル、期限、優先度）
 - Priority：タスクの優先度（HIGH, MEDIUM, LOW）を列挙型で管理
-
-## 今後の展望
-
-- 日付のフォーマットオプション追加
-- GUI化（JavaFX）
-- 完了済タスクの一括削除や検索機能の導入
-- ソート機能の詳細化（複数条件での並び替え
 
 ## ライセンス
 

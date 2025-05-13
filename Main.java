@@ -1,9 +1,14 @@
-// ==============================
-// Java Console ToDo App
-// - 作成者: sui
-// - 今後の展望：
-//     ・タイトルや日付によるソート機能の実装
-// ==============================
+
+/**
+ * Main.java - Java Console ToDo App
+ * 
+ * このクラスはアプリのエントリーポイントであり、メインメニューを表示する。
+ * 機能一覧：
+ * - タスクの追加、編集、削除、完了
+ * - 完了済みタスクの一括削除
+ * - 並び替え（完了/未完了、期限順、優先度順）
+ * - データベースのバックアップ/リストア
+ */
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -12,9 +17,15 @@ public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        TaskManager taskManager = new TaskManager(scanner);
-        taskManager.printTasks(null, null, null, null, false);
+
+        // データベースの初期化（テーブルが存在しない場合のみ作成）
         DatabaseHelper.initializeDatabase();
+
+        // タスク管理クラスのインスタンス化
+        TaskManager taskManager = new TaskManager(scanner);
+
+        // 起動時のタスク一覧表示（全件表示）
+        taskManager.printTasks(null, null, null, null, false);
 
         while (true) {
             System.out.println("""
@@ -45,13 +56,13 @@ public class Main {
                     case 7 -> taskManager.backupData();
                     case 8 -> taskManager.restoreData();
                     case 9 -> {
-                        System.out.println("アプリを終了します。");
+                        System.out.println("\nアプリを終了します。");
                         return;
                     }
-                    default -> System.out.println("無効な選択です。");
+                    default -> System.out.println("\n無効な選択です。");
                 }
             } catch (InputMismatchException e) {
-                System.out.println("数値を入力してください。");
+                System.out.println("\n数値を入力してください。");
                 scanner.nextLine(); // バッファクリア
             }
         }
